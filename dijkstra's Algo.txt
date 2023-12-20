@@ -1,80 +1,62 @@
 import heapq
+import sys
 
-infinity = float("inf")
+class Graph:
+    def __init__(self):
+        self.vertices = {}
 
-def create_graph():
-    # Create a sample graph
-    return {
-        'X': [(2, 'Y'), (3, 'Z')],
-        'Y': [(1, 'Z'), (4, 'W'), (2, 'X')],
-        'Z': [(3, 'X'), (1, 'Y'), (5, 'W')],
-        'W': [(1, 'Y'), (5, 'Z')],
-    }
+    def add_vertex(self, name, edges):
+        self.vertices[name] = edges
 
-def dijkstras_algorithm_heap(graph, start='X'):
-    shortest_paths = {}
-    visited = {}
-    heap = []
+    def dijkstra(self, start):
+        distances = {vertex: sys.maxsize for vertex in self.vertices}
+        distances[start] = 0
+        previous = {vertex: None for vertex in self.vertices}
+        nodes = [(0, start)]
 
-    for node in list(graph.keys()):
-        shortest_paths[node] = infinity
-        visited[node] = False
+        while nodes:
+            current_distance, current_vertex = heapq.heappop(nodes)
 
-    shortest_paths[start] = 0 
-    visited[start] = True
+            if current_distance > distances[current_vertex]:
+                continue
 
-    heapq.heappush(heap, (0, start))
+            for neighbor, weight in self.vertices[current_vertex].items():
+                distance = current_distance + weight
 
-    while heap:
-        distance, node = heapq.heappop(heap)
-        visited[node] = True
+                if distance < distances[neighbor]:
+                    distances[neighbor] = distance
+                    previous[neighbor] = current_vertex
+                    heapq.heappush(nodes, (distance, neighbor))
 
-        for edge in graph[node]:
-            cost, to_node = edge
+        return distances, previous
 
-            if (not visited[to_node]) and (distance + cost < shortest_paths[to_node]):
-                shortest_paths[to_node] = distance + cost
-                heapq.heappush(heap, (shortest_paths[to_node], to_node))
+    def shortest_path(self, start, finish):
+        distances, previous = self.dijkstra(start)
 
-    return shortest_paths
+        path = []
+        current_vertex = finish
+        while current_vertex is not None:
+            path.insert(0, current_vertex)
+            current_vertex = previous[current_vertex]
 
-def dijkstras_algorithm(graph, start='X'):
-    shortest_paths = {}
-    unvisited = list(graph.keys())
+        return path
 
-    for node in unvisited:
-        shortest_paths[node] = infinity
+    def print_distances(self, start):
+        distances, _ = self.dijkstra(start)
+        print("Distances from the start vertex:")
+        for vertex, distance in distances.items():
+            print(f"To {vertex}: {distance}")
 
-    shortest_paths[start] = 0
+# Example usage:
+g = Graph()
+g.add_vertex('A', {'B': 7, 'C': 8})
+g.add_vertex('B', {'A': 7, 'F': 2})
+g.add_vertex('C', {'A': 8, 'F': 6, 'G': 4})
+g.add_vertex('D', {'F': 8})
+g.add_vertex('E', {'H': 1})
+g.add_vertex('F', {'B': 2, 'C': 6, 'D': 8, 'G': 9, 'H': 3})
+g.add_vertex('G', {'C': 4, 'F': 9})
+g.add_vertex('H', {'E': 1, 'F': 3})
 
-    while unvisited:
-        min_node = None
-
-        for node in unvisited:
-            if min_node is None:
-                min_node = node
-            elif shortest_paths[node] < shortest_paths[min_node]:
-                min_node = node
-
-        for edge in graph[min_node]:
-            cost, to_node = edge
-
-            if cost + shortest_paths[min_node] < shortest_paths[to_node]:
-                shortest_paths[to_node] = cost + shortest_paths[min_node]
-
-        unvisited.remove(min_node)
-
-    return shortest_paths
-
-def execute_dijkstras():
-    graph = create_graph()
-    starting_point = 'X'
-
-    shortest_paths = dijkstras_algorithm(graph, starting_point)
-    shortest_paths_using_heap = dijkstras_algorithm_heap(graph, starting_point)
-
-    print(f'Shortest paths from {starting_point} (without heap): {shortest_paths}')
-    print(f'Shortest paths from {starting_point} using heap: {shortest_paths_using_heap}')
-
-if __name__ == '__main__':
-    execute_dijkstras()
+start_vertex = 'A'
+g.print_distances(start_vertex)
